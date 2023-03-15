@@ -10,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RESTUsers extends RESTBase {
     private static RESTUsers instance = null;
-
     public String currentUserId = "";
 
     private RESTUsers() {
@@ -35,7 +34,6 @@ public class RESTUsers extends RESTBase {
 
 
     private Response createUserResponse(String AUTH, String jsonBody) {
-
         Response result = RestAssured
 
                 .given()
@@ -45,16 +43,12 @@ public class RESTUsers extends RESTBase {
                 .body(jsonBody)
                 .when()
                 .post("/users");
-
         currentUserId = result.jsonPath().getString("id");
-
         return result;
-
     }
 
 
     private Response getUserByIdResponse(String AUTH, String userId) {
-
         return RestAssured
                 .given()
                 .contentType(ContentType.JSON)
@@ -63,11 +57,9 @@ public class RESTUsers extends RESTBase {
                 .when()
                 .pathParam("userId", userId)
                 .get("/users/{userId}");
-
     }
 
     private Response deleteUserByIdResponse(String AUTH, String userId) {
-
         return RestAssured
                 .given()
                 .contentType(ContentType.JSON)
@@ -76,11 +68,9 @@ public class RESTUsers extends RESTBase {
                 .when()
                 .pathParam("userId", userId)
                 .delete("/users/{userId}");
-
     }
 
     private Response updateUserByIdResponse(String AUTH, String body, String userId) {
-
         return RestAssured
                 .given()
                 .contentType(ContentType.JSON)
@@ -94,9 +84,7 @@ public class RESTUsers extends RESTBase {
 
     public void createNewUser() {
         Response responseCreateUser = createUserResponse(AUTH, body);
-
         Assumptions.assumeTrue(responseCreateUser.getStatusCode() == 201, "Create user didn't return 201 status code");
-
         assertAll(
                 // assert 201 for create
                 () -> assertEquals(201, responseCreateUser.getStatusCode(), "Status codes are not the same"),
@@ -104,13 +92,10 @@ public class RESTUsers extends RESTBase {
                 () -> assertEquals(name, responseCreateUser.jsonPath().getString("name"), "Names are not the same"),
                 // assert that name and email are correct in post response body
                 () -> assertEquals(email, responseCreateUser.jsonPath().getString("email"), "Emails are not the same"));
-
     }
 
     public void verifyUserWasCreated() {
-
         Response responseGetUserById = getUserByIdResponse(AUTH, currentUserId);
-
         assertAll(
                 // assert name and email and keys in get response
                 () -> assertEquals(name, responseGetUserById.jsonPath().getString("name"), "Names are not the same"),
@@ -125,16 +110,13 @@ public class RESTUsers extends RESTBase {
 
 
     public void deleteUserById() {
-
         Response deleteResponse = deleteUserByIdResponse(AUTH, currentUserId);
         Assumptions.assumeTrue(deleteResponse.getStatusCode() == 204, "Delete user didn't return 204 status code");
-
     }
 
     public void getUserById() {
         Response getUserResponse = getUserByIdResponse(AUTH, currentUserId);
         Assumptions.assumeTrue(getUserResponse.getStatusCode() == 200, "Get user didn't return 200 status code");
-
     }
 
     public void updateUserById() {
@@ -146,14 +128,11 @@ public class RESTUsers extends RESTBase {
                 "    \"gender\": \"female\",\n" +
                 "    \"status\": \"active\"\n" +
                 "}";
-
         Response updateResponse = updateUserByIdResponse(AUTH, body, currentUserId);
         Assumptions.assumeTrue(updateResponse.getStatusCode() == 200, "Update user didn't return 200 status code");
-
     }
 
     public void verifyUserIsUpdated() {
-
         Response getUserResponse = getUserByIdResponse(AUTH, currentUserId);
         assertAll(
 
@@ -162,17 +141,13 @@ public class RESTUsers extends RESTBase {
                 () -> assertEquals("active", getUserResponse.jsonPath().getString("status"), "Statuses are not the same"),
                 () -> assertEquals("female", getUserResponse.jsonPath().getString("gender"), "Names are not the same")
         );
-
     }
 
-
     public void verifyUserDoesNotExist() {
-        Response responseGetUserByIdAfterDelete = getUserByIdResponse(AUTH,currentUserId);
+        Response responseGetUserByIdAfterDelete = getUserByIdResponse(AUTH, currentUserId);
         assertAll(
                 () -> assertEquals(404, responseGetUserByIdAfterDelete.getStatusCode(), "Status codes are not the same"),
                 () -> assertEquals("Resource not found", responseGetUserByIdAfterDelete.jsonPath().getString("message"), "Message key is not present in the response with status code 404")
         );
-
-
     }
 }

@@ -4,7 +4,6 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.Assumptions;
-import utilities.ConfigReader;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -89,25 +88,18 @@ public class RESTPosts extends RESTBase {
         Assumptions.assumeTrue(createResponse.getStatusCode() == 201, "Create user didn't return 201 status code");
 
         assertAll(
-                // assert 201 for create
                 () -> assertEquals(201, createResponse.getStatusCode(), "Status codes are not the same"),
-                // jsonPath.getString() -> gets value using a key from the json response
                 () -> assertEquals(title, createResponse.jsonPath().getString("title"), "Titles are not the same"),
-                // assert that name and email are correct in post response body
                 () -> assertEquals(message, createResponse.jsonPath().getString("body"), "Bodies are not the same"));
-
     }
 
     public void getPostById() {
         Response getPost = getPostByIdResponse(AUTH, currentPostId);
         Assumptions.assumeTrue(getPost.getStatusCode() == 200, "Get user didn't return 200 status code");
-
-
     }
 
     public void verifyPostWasCreated() {
         Response getPost = getPostByIdResponse(AUTH, currentPostId);
-
         assertAll(
                 () -> assertEquals(title, getPost.jsonPath().getString("title"), "Titles are not the same"),
                 () -> assertEquals(message, getPost.jsonPath().getString("body"), "Bodies are not the same"),
@@ -117,14 +109,11 @@ public class RESTPosts extends RESTBase {
                 () -> assertTrue(getPost.getBody().asString().contains("body"), "body key is not present in the response body"),
                 () -> assertTrue(getPost.getBody().asString().contains("user_id"), "user_id key is not present in the response body")
         );
-
     }
 
     public void deletePostById() {
-
         Response deletePost = deletePostByIdResponse(AUTH, currentPostId);
         Assumptions.assumeTrue(deletePost.getStatusCode() == 204, "Delete user didn't return 204 status code");
-
     }
 
     public void updateCurrentPost() {
@@ -134,10 +123,8 @@ public class RESTPosts extends RESTBase {
                 "    \"title\":\"" + title + "\",\n" +
                 "    \"body\":\"" + message + "\"\n" +
                 "}";
-
         Response updateResponse = updatePostByIdResponse(AUTH, messageBody, currentPostId);
         Assumptions.assumeTrue(updateResponse.getStatusCode() == 200, "Update user didn't return 200 status code");
-
     }
 
     public void verifyPostIsUpdated() {
@@ -155,6 +142,5 @@ public class RESTPosts extends RESTBase {
                 () -> assertEquals(404, getPost.getStatusCode(), "Status codes are not the same"),
                 () -> assertEquals("Resource not found", getPost.jsonPath().getString("message"), "Message key is not present in the response with status code 404")
         );
-
     }
 }

@@ -1,7 +1,6 @@
 package stepdefs;
 
 import io.cucumber.java.Before;
-import io.cucumber.java.BeforeStep;
 import io.restassured.RestAssured;
 import utilities.ConfigReader;
 

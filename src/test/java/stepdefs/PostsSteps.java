@@ -10,17 +10,17 @@ public class PostsSteps {
 
     @Given("Create new post")
     public void create_new_post() {
-      posts.createNewPost();
+        posts.createNewPost();
     }
 
     @Then("Verify post was created")
     public void verify_post_was_created() {
-     posts.verifyPostWasCreated();
+        posts.verifyPostWasCreated();
     }
 
     @Then("Delete post by using post id")
     public void delete_post_by_using_post_id() {
-       posts.deletePostById();
+        posts.deletePostById();
     }
 
     @And("Get post by id")
