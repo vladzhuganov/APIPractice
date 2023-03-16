@@ -1,9 +1,12 @@
 package endpoints;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.Assumptions;
+import pojo.UsersPojo;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,13 +20,16 @@ public class RESTUsers extends RESTBase {
 
     String name = FAKER.name().fullName();
     String email = FAKER.internet().emailAddress();
+    UsersPojo deserializedUser;
+    UsersPojo user = new UsersPojo(name, email, "male", "inactive");
+    Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
 
-    String body = "{\n" +
-            "    \"name\": \"" + name + "\",\n" +
-            "    \"email\": \"" + email + "\",\n" +
-            "    \"gender\": \"male\",\n" +
-            "    \"status\": \"inactive\"\n" +
-            "}";
+//    String body = "{\n" +
+//            "    \"name\": \"" + name + "\",\n" +
+//            "    \"email\": \"" + email + "\",\n" +
+//            "    \"gender\": \"male\",\n" +
+//            "    \"status\": \"inactive\"\n" +
+//            "}";
 
     public static RESTUsers getInstance() {
         if (instance == null) {
@@ -84,28 +90,28 @@ public class RESTUsers extends RESTBase {
     }
 
     public void createNewUser() {
-        Response responseCreateUser = createUserResponse(AUTH, body);
+        Response responseCreateUser = createUserResponse(AUTH, gson.toJson(user));
+        deserializedUser = gson.fromJson(responseCreateUser.asString(), UsersPojo.class);
         Assumptions.assumeTrue(responseCreateUser.getStatusCode() == 201, "Create user didn't return 201 status code");
         assertAll(
-                // assert 201 for create
                 () -> assertEquals(201, responseCreateUser.getStatusCode(), "Status codes are not the same"),
-                // jsonPath.getString() -> gets value using a key from the json response
-                () -> assertEquals(name, responseCreateUser.jsonPath().getString("name"), "Names are not the same"),
-                // assert that name and email are correct in post response body
-                () -> assertEquals(email, responseCreateUser.jsonPath().getString("email"), "Emails are not the same"));
+                () -> assertEquals(user.getName(), deserializedUser.getName(), "Names are not the same"),
+                () -> assertEquals(user.getEmail(), deserializedUser.getEmail(), "Emails are not the same"));
     }
+
 
     public void verifyUserWasCreated() {
         Response responseGetUserById = getUserByIdResponse(AUTH, currentUserId);
+        deserializedUser = gson.fromJson(responseGetUserById.asString(), UsersPojo.class);
         assertAll(
-                // assert name and email and keys in get response
-                () -> assertEquals(name, responseGetUserById.jsonPath().getString("name"), "Names are not the same"),
-                () -> assertEquals(email, responseGetUserById.jsonPath().getString("email"), "Emails are not the same"),
-                () -> assertTrue(responseGetUserById.getBody().asString().contains("id"), "id key is not present in the response body"),
-                () -> assertTrue(responseGetUserById.getBody().asString().contains("name"), "name key is not present in the response body"),
-                () -> assertTrue(responseGetUserById.getBody().asString().contains("email"), "email key is not present in the response body"),
-                () -> assertTrue(responseGetUserById.getBody().asString().contains("status"), "status key is not present in the response body"),
-                () -> assertTrue(responseGetUserById.getBody().asString().contains("gender"), "gender key is not present in the response body")
+
+                () -> assertEquals(user.getName(), deserializedUser.getName(), "Names are not the same"),
+                () -> assertEquals(user.getEmail(), deserializedUser.getEmail(), "Emails are not the same"),
+                () -> assertTrue(deserializedUser.getId() > 0, "id key is not present in the response body"),
+                () -> assertFalse(deserializedUser.getName().isEmpty(), "name key is not present in the response body"),
+                () -> assertFalse(deserializedUser.getEmail().isEmpty(), "email key is not present in the response body"),
+                () -> assertFalse(deserializedUser.getStatus().isEmpty(), "status key is not present in the response body"),
+                () -> assertFalse(deserializedUser.getGender().isEmpty(), "gender key is not present in the response body")
         );
     }
 
@@ -123,24 +129,27 @@ public class RESTUsers extends RESTBase {
     public void updateUserById() {
         name = FAKER.name().fullName();
         email = FAKER.internet().emailAddress();
-        body = "{\n" +
-                "    \"name\": \"" + name + "\",\n" +
-                "    \"email\": \"" + email + "\",\n" +
-                "    \"gender\": \"female\",\n" +
-                "    \"status\": \"active\"\n" +
-                "}";
-        Response updateResponse = updateUserByIdResponse(AUTH, body, currentUserId);
+        user.setName(name);
+        user.setEmail(email);
+//        body = "{\n" +
+//                "    \"name\": \"" + name + "\",\n" +
+//                "    \"email\": \"" + email + "\",\n" +
+//                "    \"gender\": \"female\",\n" +
+//                "    \"status\": \"active\"\n" +
+//                "}";
+        Response updateResponse = updateUserByIdResponse(AUTH, gson.toJson(user), currentUserId);
         Assumptions.assumeTrue(updateResponse.getStatusCode() == 200, "Update user didn't return 200 status code");
     }
 
     public void verifyUserIsUpdated() {
         Response getUserResponse = getUserByIdResponse(AUTH, currentUserId);
+        deserializedUser = gson.fromJson(getUserResponse.asString(), UsersPojo.class);
         assertAll(
 
-                () -> assertEquals(name, getUserResponse.jsonPath().getString("name"), "Names are not the same"),
-                () -> assertEquals(email, getUserResponse.jsonPath().getString("email"), "Emails are not the same"),
-                () -> assertEquals("active", getUserResponse.jsonPath().getString("status"), "Statuses are not the same"),
-                () -> assertEquals("female", getUserResponse.jsonPath().getString("gender"), "Names are not the same")
+                () -> assertEquals(user.getName(), deserializedUser.getName(), "Names are not the same"),
+                () -> assertEquals(user.getEmail(), deserializedUser.getEmail(), "Emails are not the same"),
+                () -> assertEquals(user.getStatus(), deserializedUser.getStatus(), "Statuses are not the same"),
+                () -> assertEquals(user.getGender(), deserializedUser.getGender(), "Names are not the same")
         );
     }
 

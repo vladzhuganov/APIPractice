@@ -1,29 +1,33 @@
 package endpoints;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.Assumptions;
+import pojo.PostsPojo;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RESTPosts extends RESTBase {
     private static RESTPosts instance = null;
-
+    String title = FAKER.lordOfTheRings().character();
+    String message = FAKER.chuckNorris().fact();
     private String currentPostId = "";
+    PostsPojo deserializedPost;
+    PostsPojo post = new PostsPojo(title, message);;
+    Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
 
     private RESTPosts() {
     }
 
-    String title = FAKER.lordOfTheRings().character();
-    String message = FAKER.chuckNorris().fact();
 
-
-    String messageBody = "{\n" +
-            "    \"title\":\"" + title + "\",\n" +
-            "    \"body\":\"" + message + "\"\n" +
-            "}";
+//    String messageBody = "{\n" +
+//            "    \"title\":\"" + title + "\",\n" +
+//            "    \"body\":\"" + message + "\"\n" +
+//            "}";
 
     public static RESTPosts getInstance() {
         if (instance == null) {
@@ -34,7 +38,6 @@ public class RESTPosts extends RESTBase {
 
 
     private Response createPost(String AUTH, String body) {
-
         Response result = RestAssured
                 .given()
                 .contentType(ContentType.JSON)
@@ -44,9 +47,7 @@ public class RESTPosts extends RESTBase {
                 .when()
                 .post("/users/" + RESTUsers.getInstance().currentUserId + "/posts");
         currentPostId = result.jsonPath().getString("id");
-
         return result;
-
     }
 
     private Response getPostByIdResponse(String AUTH, String postId) {
@@ -58,7 +59,6 @@ public class RESTPosts extends RESTBase {
                 .when()
                 .pathParam("id", postId)
                 .get("/posts/{id}");
-
     }
 
     private Response deletePostByIdResponse(String AUTH, String postId) {
@@ -70,7 +70,6 @@ public class RESTPosts extends RESTBase {
                 .when()
                 .pathParam("id", postId)
                 .delete("/posts/{id}");
-
     }
 
     private Response updatePostByIdResponse(String AUTH, String body, String postId) {
@@ -86,54 +85,58 @@ public class RESTPosts extends RESTBase {
     }
 
     public void createNewPost() {
-        Response createResponse = createPost(AUTH, messageBody);
-        Assumptions.assumeTrue(createResponse.getStatusCode() == 201, "Create user didn't return 201 status code");
+        Response createResponse = createPost(AUTH, gson.toJson(post));
+        Assumptions.assumeTrue(createResponse.getStatusCode() == 201, "Create post didn't return 201 status code");
+        deserializedPost = gson.fromJson(createResponse.asString(), PostsPojo.class);
         assertAll(
                 () -> assertEquals(201, createResponse.getStatusCode(), "Status codes are not the same"),
-                () -> assertEquals(title, createResponse.jsonPath().getString("title"), "Titles are not the same"),
-                () -> assertEquals(message, createResponse.jsonPath().getString("body"), "Bodies are not the same"));
+                () -> assertEquals(post.getTitle(), deserializedPost.getTitle(), "Titles are not the same"),
+                () -> assertEquals(post.getBody(), deserializedPost.getBody(), "Bodies are not the same"));
     }
 
     public void getPostById() {
         Response getPost = getPostByIdResponse(AUTH, currentPostId);
-        Assumptions.assumeTrue(getPost.getStatusCode() == 200, "Get user didn't return 200 status code");
+        Assumptions.assumeTrue(getPost.getStatusCode() == 200, "Get post didn't return 200 status code");
     }
 
     public void verifyPostWasCreated() {
         Response getPost = getPostByIdResponse(AUTH, currentPostId);
+        deserializedPost = gson.fromJson(getPost.asString(), PostsPojo.class);
         assertAll(
-                () -> assertEquals(title, getPost.jsonPath().getString("title"), "Titles are not the same"),
-                () -> assertEquals(message, getPost.jsonPath().getString("body"), "Bodies are not the same"),
-                () -> assertEquals(RESTUsers.getInstance().currentUserId, getPost.jsonPath().getString("user_id"), "user_id are not the same"),
-                () -> assertTrue(getPost.getBody().asString().contains("id"), "id key is not present in the response body"),
-                () -> assertTrue(getPost.getBody().asString().contains("title"), "title key is not present in the response body"),
-                () -> assertTrue(getPost.getBody().asString().contains("body"), "body key is not present in the response body"),
-                () -> assertTrue(getPost.getBody().asString().contains("user_id"), "user_id key is not present in the response body")
+                () -> assertEquals(post.getTitle(), deserializedPost.getTitle(), "Titles are not the same"),
+                () -> assertEquals(post.getBody(), deserializedPost.getBody(), "Bodies are not the same"),
+                () -> assertTrue(deserializedPost.getId() > 0, "id key is not present in the response body or it equals 0"),
+                () -> assertFalse(deserializedPost.getTitle().isEmpty(), "title key is not present in the response body"),
+                () -> assertFalse(deserializedPost.getBody().isEmpty(), "body key is not present in the response body"),
+                () -> assertFalse(deserializedPost.getUser_id().isEmpty(), "user_id key is not present in the response body")
         );
     }
 
     public void deletePostById() {
         Response deletePost = deletePostByIdResponse(AUTH, currentPostId);
-        Assumptions.assumeTrue(deletePost.getStatusCode() == 204, "Delete user didn't return 204 status code");
+        Assumptions.assumeTrue(deletePost.getStatusCode() == 204, "Delete post didn't return 204 status code");
     }
 
     public void updateCurrentPost() {
         title = FAKER.lordOfTheRings().character();
         message = FAKER.chuckNorris().fact();
-        messageBody = "{\n" +
-                "    \"title\":\"" + title + "\",\n" +
-                "    \"body\":\"" + message + "\"\n" +
-                "}";
-        Response updateResponse = updatePostByIdResponse(AUTH, messageBody, currentPostId);
-        Assumptions.assumeTrue(updateResponse.getStatusCode() == 200, "Update user didn't return 200 status code");
+        post.setTitle(title);
+        post.setBody(message);
+//        messageBody = "{\n" +
+//                "    \"title\":\"" + title + "\",\n" +
+//                "    \"body\":\"" + message + "\"\n" +
+//                "}";
+        Response updateResponse = updatePostByIdResponse(AUTH, gson.toJson(post), currentPostId);
+        Assumptions.assumeTrue(updateResponse.getStatusCode() == 200, "Update post didn't return 200 status code");
     }
 
     public void verifyPostIsUpdated() {
         Response getPost = getPostByIdResponse(AUTH, currentPostId);
+        deserializedPost = gson.fromJson(getPost.asString(), PostsPojo.class);
         assertAll(
-                () -> assertEquals(title, getPost.jsonPath().getString("title"), "Titles are not the same"),
-                () -> assertEquals(message, getPost.jsonPath().getString("body"), "Bodies are not the same"),
-                () -> assertEquals(RESTUsers.getInstance().currentUserId, getPost.jsonPath().getString("user_id"), "user_id are not the same")
+                () -> assertEquals(post.getTitle(), deserializedPost.getTitle(), "Titles are not the same"),
+                () -> assertEquals(post.getBody(), deserializedPost.getBody(), "Bodies are not the same"),
+                () -> assertEquals(RESTUsers.getInstance().currentUserId, deserializedPost.getUser_id(), "user_id are not the same")
         );
     }
 
