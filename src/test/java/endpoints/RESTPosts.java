@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RESTPosts extends RESTBase {
     private static RESTPosts instance = null;
-    private String currentUserId = RESTUsers.getInstance().currentUserId;
+
     private String currentPostId = "";
 
     private RESTPosts() {
@@ -34,6 +34,7 @@ public class RESTPosts extends RESTBase {
 
 
     private Response createPost(String AUTH, String body) {
+
         Response result = RestAssured
                 .given()
                 .contentType(ContentType.JSON)
@@ -41,8 +42,9 @@ public class RESTPosts extends RESTBase {
                 .accept(ContentType.JSON)
                 .body(body)
                 .when()
-                .post("/users/" + currentUserId + "/posts");
+                .post("/users/" + RESTUsers.getInstance().currentUserId + "/posts");
         currentPostId = result.jsonPath().getString("id");
+
         return result;
 
     }
@@ -86,7 +88,6 @@ public class RESTPosts extends RESTBase {
     public void createNewPost() {
         Response createResponse = createPost(AUTH, messageBody);
         Assumptions.assumeTrue(createResponse.getStatusCode() == 201, "Create user didn't return 201 status code");
-
         assertAll(
                 () -> assertEquals(201, createResponse.getStatusCode(), "Status codes are not the same"),
                 () -> assertEquals(title, createResponse.jsonPath().getString("title"), "Titles are not the same"),
@@ -103,7 +104,7 @@ public class RESTPosts extends RESTBase {
         assertAll(
                 () -> assertEquals(title, getPost.jsonPath().getString("title"), "Titles are not the same"),
                 () -> assertEquals(message, getPost.jsonPath().getString("body"), "Bodies are not the same"),
-                () -> assertEquals(currentUserId, getPost.jsonPath().getString("user_id"), "user_id are not the same"),
+                () -> assertEquals(RESTUsers.getInstance().currentUserId, getPost.jsonPath().getString("user_id"), "user_id are not the same"),
                 () -> assertTrue(getPost.getBody().asString().contains("id"), "id key is not present in the response body"),
                 () -> assertTrue(getPost.getBody().asString().contains("title"), "title key is not present in the response body"),
                 () -> assertTrue(getPost.getBody().asString().contains("body"), "body key is not present in the response body"),
@@ -132,7 +133,7 @@ public class RESTPosts extends RESTBase {
         assertAll(
                 () -> assertEquals(title, getPost.jsonPath().getString("title"), "Titles are not the same"),
                 () -> assertEquals(message, getPost.jsonPath().getString("body"), "Bodies are not the same"),
-                () -> assertEquals(currentUserId, getPost.jsonPath().getString("user_id"), "user_id are not the same")
+                () -> assertEquals(RESTUsers.getInstance().currentUserId, getPost.jsonPath().getString("user_id"), "user_id are not the same")
         );
     }
 

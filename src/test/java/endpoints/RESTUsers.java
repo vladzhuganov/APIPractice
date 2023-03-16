@@ -35,7 +35,6 @@ public class RESTUsers extends RESTBase {
 
     private Response createUserResponse(String AUTH, String jsonBody) {
         Response result = RestAssured
-
                 .given()
                 .contentType(ContentType.JSON)
                 .headers("Authorization", "Bearer " + AUTH)
@@ -60,7 +59,7 @@ public class RESTUsers extends RESTBase {
     }
 
     private Response deleteUserByIdResponse(String AUTH, String userId) {
-        return RestAssured
+        Response result = RestAssured
                 .given()
                 .contentType(ContentType.JSON)
                 .headers("Authorization", "Bearer " + AUTH)
@@ -68,6 +67,8 @@ public class RESTUsers extends RESTBase {
                 .when()
                 .pathParam("userId", userId)
                 .delete("/users/{userId}");
+        return result;
+
     }
 
     private Response updateUserByIdResponse(String AUTH, String body, String userId) {

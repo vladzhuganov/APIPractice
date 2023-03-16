@@ -8,7 +8,7 @@ import io.cucumber.java.en.Then;
 public class PostsSteps {
     RESTPosts posts = RESTPosts.getInstance();
 
-    @Given("Create new post")
+    @Given("Create a new post")
     public void create_new_post() {
         posts.createNewPost();
     }
